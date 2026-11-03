@@ -1,0 +1,32 @@
+-- =====================================================================
+-- V2: reference data (categories + SYSTEM merchant rules).
+--
+-- TODO(santosh): this one is yours to write. Then remove @Disabled from
+-- MigrationIntegrationTest.uncategorizedCategoryIsSeeded and run ./mvnw verify.
+--
+-- 1. Insert the categories. 'Uncategorized' is REQUIRED (the app falls back
+--    to it). Suggested set:
+--      Uncategorized, Food, Groceries, Fuel, Shopping, Bills, Rent, Travel,
+--      Health, Entertainment, Transfers, Salary, Investments
+--
+--    Hint: one INSERT with many VALUES rows is a single round trip:
+--      INSERT INTO categories (name) VALUES ('Uncategorized'), ('Food'), ...;
+--
+-- 2. Insert about 10 SYSTEM merchant rules for merchants YOU actually use
+--    (Swiggy, Zomato, BigBasket, Blinkit, Zepto, an IOCL/HPCL pump, Airtel,
+--    Jio, BESCOM/MSEDCL, Amazon, Zerodha...).
+--
+--    Hint: don't hard-code category ids (identity values are not guaranteed
+--    to be 1, 2, 3...). Look them up by name with INSERT ... SELECT:
+--
+--      INSERT INTO merchant_rules (pattern, match_type, category_id, priority, created_by)
+--      SELECT v.pattern, v.match_type, c.id, 100, 'SYSTEM'
+--      FROM (VALUES ('SWIGGY', 'CONTAINS', 'Food'),
+--                   ('ZERODHA', 'CONTAINS', 'Investments')
+--           ) AS v(pattern, match_type, category_name)
+--      JOIN categories c ON c.name = v.category_name;
+--
+--    Patterns must be UPPERCASE (a CHECK constraint in V1 enforces this).
+--    Think: why is CONTAINS 'AMAZON' risky? (Amazon Pay bill payments vs
+--    shopping.) We'll refine matching in Phase 2.
+-- =====================================================================

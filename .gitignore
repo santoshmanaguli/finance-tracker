@@ -1,0 +1,22 @@
+# ---- Secrets ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---- Real financial data: never commit -------------------------------------
+statements/
+*.pdf
+*.csv
+*.xlsx
+samples/
+# Parser test fixtures live in src/test/resources/sms/ and must be MASKED.
+
+# ---- Build output ----------------------------------------------------------
+target/
+
+# ---- IDE / OS --------------------------------------------------------------
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log

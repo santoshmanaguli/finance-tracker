@@ -1,0 +1,5 @@
+# Unix line endings for scripts so ./mvnw works in Linux containers even when
+# the repo is checked out on Windows.
+mvnw text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
