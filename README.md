@@ -9,7 +9,7 @@ A personal finance tracker for a single user in India. Bank SMS alerts are forwa
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation: skeleton, compose, schema, health | ✅ |
-| 2 | SMS ingest, parsers, dedup, categorization, iOS Shortcut | ⏳ |
+| 2 | SMS ingest, parsers, dedup, categorization, iOS Shortcut | 🟡 framework done; bank parsers need samples |
 | 3 | Read APIs: list/filter, monthly summary, recategorize | |
 | 4 | PWA dashboard | |
 | 5 | Statement import + reconciliation | |
@@ -130,10 +130,52 @@ The principle: put a rule in the database when it is absolute, and in code plus 
 
 ---
 
+## API
+
+### `POST /api/ingest/sms`
+Called by the iOS Shortcut ([setup guide](docs/ios-shortcut.md)). Requires the `X-Api-Token` header, whose value must equal the `INGEST_API_TOKEN` env var. If that env var is unset, **every** request is rejected (fail closed).
+
+```bash
+curl -i localhost:8080/api/ingest/sms \
+  -H "X-Api-Token: $INGEST_API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"sender":"AX-HDFCBK","body":"...masked SMS...","receivedAt":"2026-11-04T10:16:00+05:30"}'
+```
+
+| Response | `status` | Meaning |
+|---|---|---|
+| 201 | `CREATED` | New transaction recorded |
+| 200 | `MATCHED_EXISTING` | Parsed; same transaction already known from another source |
+| 200 | `ALREADY_RECEIVED` | Exact same message seen before (retry); no-op |
+| 200 | `IGNORED` | OTP / promo; OTP text is redacted before storage |
+| 200 | `UNPARSED` | Stored in `unparsed_messages` for review; never dropped |
+| 400 | — | Invalid payload (`application/problem+json`) |
+| 401 | — | Missing or wrong token |
+| 409 | — | Two identical requests raced; the first one won, nothing lost |
+
+### Ingest pipeline
+
+```
+Shortcut ──HTTPS──▶ ApiTokenFilter ──▶ SmsIngestController ──▶ SmsIngestService (one DB transaction)
+                                                                   │
+                       1. content hash seen? ──yes──▶ ALREADY_RECEIVED
+                       2. SmsParserRegistry: OTP? ▶ IGNORED · route by sender header ▶ bank parser
+                       3. AccountService.findOrCreate(institution, type, last4)
+                       4. TransactionRecorder: ref match? fuzzy cross-source match? else create + categorize
+                       5. save RawMessage linked to the transaction
+```
+
+### Adding a bank parser
+1. Put masked sample SMS in a test: `src/test/java/.../ingest/parser/<Bank>SmsParserTest.java`.
+2. Implement `SmsParser` as a `@Component` in `ingest/parser/`, returning `Parsed` / `Ignored` / `Failed`.
+3. Return its sender header(s) from `senderCodes()`, for example `HDFCBK`. Startup fails if two parsers claim the same header.
+
+---
+
 ## Security baseline
 - Secrets come only from environment variables (`.env` locally, a secrets manager in production) and never from code or `application.yml`.
 - Full card and account numbers are never stored, only the last 4 digits, and the schema enforces this.
 - `.gitignore` excludes `.env`, `statements/`, `samples/`, `*.pdf`, `*.csv` and `*.xlsx`. Parser test fixtures must be **masked** samples.
+- The ingest token is compared in constant time, and SMS bodies are never written to logs.
 - Compose binds Postgres and the app to `127.0.0.1`, not to every network interface.
 - Actuator exposes only `health` and `info`, with details hidden.
 - The container runs as a non-root user.

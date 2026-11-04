@@ -8,16 +8,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 
 /**
  * Black-box test: start the real server on a random port, call it over HTTP.
  * This is what Docker / a load balancer will do, so it is the honest check.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfig.class)
+@IntegrationTest
 class HealthEndpointIntegrationTest {
 
     @LocalServerPort

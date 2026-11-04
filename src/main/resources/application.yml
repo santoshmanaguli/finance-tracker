@@ -44,3 +44,6 @@ finance:
   # Phase 2: shared secret for POST /api/ingest/sms. No default on purpose:
   # if it is missing in production the ingest endpoint must refuse everything.
   ingest-token: ${INGEST_API_TOKEN:}
+  # Cross-source dedup (layer 3): an SMS and an email for the same card swipe
+  # are considered the same transaction if their times are within this window.
+  dedup-window-minutes: 15

@@ -7,8 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -21,8 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
  * {@code @Transactional} on a test class = each test runs in a transaction that
  * is rolled back afterwards, so tests don't leak rows into each other.
  */
-@SpringBootTest
-@Import(TestcontainersConfig.class)
+@IntegrationTest
 @Transactional
 class MigrationIntegrationTest {
 
