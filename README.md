@@ -1,13 +1,27 @@
 # finance-tracker
 
-A personal finance tracker for a single user in India. Bank SMS alerts are forwarded from an iPhone by an iOS Shortcut. The backend parses each SMS, removes duplicates and assigns a category, and a PWA dashboard (later phase) displays the results.
+A personal finance tracker for a single user in India. Bank SMS alerts are forwarded from an iPhone by an iOS Shortcut. The backend parses each SMS, removes duplicates and assigns a category, and a React Native (Expo) app (later phase) displays the results.
 
 **Stack:** Java 21 · Spring Boot 4.1 · PostgreSQL 16 · Flyway · Spring Data JPA · Docker Compose · JUnit 5 + Testcontainers
 
 **Banks:** HDFC, SBI, OneCard (credit card)
 
+📚 **Full documentation: [`docs/`](docs/README.md)**: [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [decision records](docs/README.md#architecture-decision-records).
+
 | Phase | Scope | Status |
 |---|---|---|
+| 1 | Foundation: skeleton, compose, schema, health | ✅ |
+| 2 | SMS ingest, parser framework, dedup, categorization, iOS Shortcut | ✅ framework; bank parsers need samples |
+| 2.5 | Multi-user + Google sign-in | 📝 planned |
+| 3 | Read APIs + notes, tags, payee rules, splits | |
+| 4 | App: Expo React Native (iPhone web build, Android APK) | |
+| 5 | Statement import + reconciliation | |
+| 6 | Gmail alert ingestion | |
+| 7 | AWS deploy, HTTPS, CI/CD, Terraform | |
+| 8 | Observability + "no transactions in 3 days" alert | |
+| 9 | AI: categorization, fallback parser, plain-English questions | |
+
+---|---|---|
 | 1 | Foundation: skeleton, compose, schema, health | ✅ |
 | 2 | SMS ingest, parsers, dedup, categorization, iOS Shortcut | 🟡 framework done; bank parsers need samples |
 | 3 | Read APIs: list/filter, monthly summary, recategorize | |
