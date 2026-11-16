@@ -21,15 +21,6 @@ A personal finance tracker for a single user in India. Bank SMS alerts are forwa
 | 8 | Observability + "no transactions in 3 days" alert | |
 | 9 | AI: categorization, fallback parser, plain-English questions | |
 
----|---|---|
-| 1 | Foundation: skeleton, compose, schema, health | ✅ |
-| 2 | SMS ingest, parsers, dedup, categorization, iOS Shortcut | 🟡 framework done; bank parsers need samples |
-| 3 | Read APIs: list/filter, monthly summary, recategorize | |
-| 4 | PWA dashboard | |
-| 5 | Statement import + reconciliation | |
-| 6 | Gmail alert ingestion | |
-| 7 | AWS deploy, HTTPS, CI/CD, Terraform | |
-| 8 | Observability + "no transactions in 3 days" alert | |
 
 ---
 
