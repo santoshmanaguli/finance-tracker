@@ -1,6 +1,6 @@
 # Phase 2.5 plan: multi-user + Google sign-in
 
-- **Status:** Proposed, awaiting owner approval
+- **Status:** Design accepted; **to be rewritten for Node/Fastify** before implementation (Step 3). Spring-specific parts are obsolete
 - **Decision record:** [ADR-0007](../decisions/0007-multi-user-google-login.md)
 - **New dependencies (approved 2026-11-16):** `spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server`
 

@@ -1,35 +1,49 @@
 # Roadmap
 
-Each phase ends with a review. Nothing in the next phase starts until the owner approves.
+> **Direction since 2026-11-18:** Node + TypeScript backend ([ADR-0009](decisions/0009-node-typescript-fastify.md)), free hosting ([ADR-0010](decisions/0010-free-hosting.md)), and a DevOps + AI/LLM learning focus. **The AI writes most application code; the owner builds the infrastructure.**
 
-| # | Phase | Delivers | Status |
-|---|---|---|---|
-| 1 | Foundation | Spring Boot skeleton, Docker Compose, Flyway schema, health endpoint | ✅ Done |
-| 2 | SMS ingest | `POST /api/ingest/sms`, parser framework, 3-layer dedup, categorization, iOS Shortcut guide | ✅ Framework done |
-| 2.5 | **Multi-user + Google sign-in** | Users, our own JWT + refresh tokens, device tokens, per-user data | 📝 [Plan](plans/phase-2.5-multi-user.md): awaiting approval |
-| 2b | Bank parsers | HDFC, SBI, OneCard (then friends' banks) | ⏳ Blocked on masked sample SMS |
-| 3 | Read APIs + "what was it for" | List/filter, monthly summary, recategorize (creates a rule), notes, tags, UPI payee rules, split transactions | Planned |
-| 4 | App (Expo React Native) | iPhone web build first: login, dashboard, inbox, annotations. Then the Android APK with SMS + notification capture | Planned |
-| 5 | Statements | PDF/CSV upload, reconciliation, mismatch flags | Planned |
-| 6 | Gmail alerts | Second automatic capture route ([caveat for friends](decisions/0007-multi-user-google-login.md)) | Planned |
-| 7 | Deploy | AWS + HTTPS (Caddy), GitHub Actions CI/CD (also builds and signs the APK), Terraform, secrets in SSM, encrypted backups, Row-Level Security | Planned |
-| 8 | Observability | Structured logs, Micrometer metrics, "no transaction in 3 days" alert | Planned |
-| 9 | AI | LLM category suggestions, LLM fallback parser, plain-English questions, later self-hosted models + pgvector | Planned |
+## How every step runs
+
+```
+plan in docs/plans/ → owner approves → feature branch → code + tests → pull request
+→ CI green → owner reviews the diff → merge to main → (from Step 4) auto-deploy
+```
+
+## Steps
+
+| # | Step | Mainly | Owner learns | Status |
+|---|---|---|---|---|
+| 0 | **Reset:** archive Java (`archive/java-v0`), ADRs 0009/0010, new roadmap | AI | Decision records | ✅ Done |
+| 1 | **Port the backend to Node**: pnpm monorepo, Fastify API, same schema and test cases ([plan](plans/step-1-node-port.md)) | AI | Reviewing a port; monorepos | 📝 Plan awaiting approval |
+| 2 | **CI from day one**: GitHub Actions lint → test (Postgres) → build image → Trivy scan → push to GHCR | **Owner** | CI pipelines, registries, supply-chain security | |
+| 3 | **Multi-user + Google sign-in** ([plan, to be rewritten for Node](plans/phase-2.5-multi-user.md)) | AI | OIDC, JWT, token rotation | |
+| 4 | **First real deploy**: Oracle VM + Docker Compose + Caddy + DuckDNS. The iPhone Shortcut goes live | **Owner** | Linux, firewalls, TLS, DNS | |
+| 5 | **Bank parsers**: HDFC, SBI, OneCard | AI | | ⏳ Needs masked SMS samples |
+| 6 | **Read APIs + "what was it for"**: notes, tags, payee rules, splits | AI | | |
+| 7 | **App**: Expo web build → Cloudflare Pages; APK via GitHub Actions | AI (app), **owner** (pipelines) | Frontend and mobile CI/CD | |
+| 8 | **Terraform**: VM, network, firewall, DNS as code | **Owner** | Infrastructure as code, state | |
+| 9 | **Kubernetes + GitOps**: k3s, Helm chart, Argo CD | **Owner** | Kubernetes, Helm, GitOps | |
+| 10 | **Observability**: metrics, logs, dashboards, Healthchecks.io dead-man's switch | **Owner** | Monitoring, SLOs, alerting | |
+| 11 | **Statements + Gmail** capture routes | AI | Scheduled jobs | |
+| 12 | **AI service (Python)**: LLM categorization, fallback parser, plain-English questions with pgvector, self-hosted Ollama on k3s | Both | LLM serving, evaluation, AI infra | |
 
 ## Pending from the owner
 
-- [ ] **Masked sample SMS:** 3–5 each from HDFC, SBI and OneCard, with the sender ID as shown on the phone. Keep exact spacing and punctuation; mask digits (`XX1234`).
-- [ ] **Account details:** which HDFC and SBI products (savings, debit card, credit card), and OneCard's issuing bank.
-- [ ] **`V2__seed_categories.sql`**: hands-on task. Required before real ingest works (the `Uncategorized` category).
-- [ ] **Approve the Phase 2.5 plan.**
-- [ ] Before Phase 4: create a free Google Cloud project + OAuth client IDs (steps will be provided).
+- [ ] **Approve the [Step 1 plan](plans/step-1-node-port.md).**
+- [ ] **Masked sample SMS:** 3–5 each from HDFC, SBI and OneCard, with sender IDs (exact spacing and punctuation; digits masked as `XX1234`).
+- [ ] **Account details:** which HDFC and SBI products; OneCard's issuing bank.
+- [ ] Before Step 4: create an **Oracle Cloud** account (Always Free) and a **DuckDNS** subdomain.
+- [ ] Before Step 7: a free Google Cloud project + OAuth client IDs (steps will be provided).
 
 ## Decisions log
 
 | Date | Decision |
 |---|---|
-| 2026-11-03 | Stack: Java 21, Spring Boot 4.1, Postgres 16, Flyway, Testcontainers ([0001](decisions/0001-java-spring-boot.md), [0002](decisions/0002-postgresql.md)) |
+| 2026-11-03 | Stack: Java 21, Spring Boot, Postgres 16 ([0001](decisions/0001-java-spring-boot.md), [0002](decisions/0002-postgresql.md)) |
 | 2026-11-03 | Banks: HDFC, SBI, OneCard |
-| 2026-11-16 | Go multi-user; Google sign-in; Spring Security approved ([0007](decisions/0007-multi-user-google-login.md)) |
-| 2026-11-16 | App: React Native + Expo; iPhone uses the web build; Android via sideloaded APK ([0008](decisions/0008-react-native-expo-client.md)) |
-| 2026-11-16 | AI after Phase 4 |
+| 2026-11-16 | Go multi-user; Google sign-in ([0007](decisions/0007-multi-user-google-login.md)) |
+| 2026-11-16 | App: React Native + Expo; iPhone uses the web build ([0008](decisions/0008-react-native-expo-client.md)) |
+| 2026-11-16 | AI after the app exists |
+| 2026-11-18 | **Java dropped → Node 24 + TypeScript + Fastify** ([0009](decisions/0009-node-typescript-fastify.md)); Java preserved on `archive/java-v0` |
+| 2026-11-18 | **Free tools only:** Oracle Always Free, DuckDNS, Cloudflare Pages, GitHub Actions ([0010](decisions/0010-free-hosting.md)) |
+| 2026-11-18 | Owner focus: DevOps + AI/LLM; owner writes the infrastructure, AI writes the application code |

@@ -13,7 +13,7 @@ Friends want to use the app too. Phases 1–2 assumed a single user (one static 
 2. **Sessions:** the backend verifies Google's ID token once, then issues **our own** short-lived access token (JWT, 15 min) and a rotating refresh token (30 days, stored hashed; reuse of an old one revokes the whole family).
 3. **Machine clients:** iOS Shortcuts use **per-device tokens**, generated in the app, stored as SHA-256 hashes, individually revocable, and limited to `/api/ingest/**`.
 4. **Isolation:** `user_id` on every owned table, every query scoped by user, then **Postgres Row-Level Security** as defence in depth before any friend's real data arrives.
-5. **Framework:** Spring Security + OAuth2 Resource Server (approved 2026-11-16).
+5. **Framework:** ~~Spring Security + OAuth2 Resource Server~~. Since [ADR-0009](0009-node-typescript-fastify.md): `jose` for JWT signing and verification in Fastify (to be confirmed in the Phase 2.5 plan rewrite).
 
 ## Why our own tokens instead of passing Google's token everywhere
 

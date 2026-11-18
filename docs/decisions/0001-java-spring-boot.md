@@ -1,6 +1,6 @@
 # ADR-0001: Java 21 + Spring Boot for the backend
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0009](0009-node-typescript-fastify.md) on 2026-11-18. The Java code is preserved on the `archive/java-v0` branch.
 - **Date:** 2026-11-03
 
 ## Context

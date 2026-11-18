@@ -1,5 +1,7 @@
 # Architecture
 
+> **Note (2026-11-18):** the backend is moving from Java/Spring Boot to Node/TypeScript/Fastify ([ADR-0009](decisions/0009-node-typescript-fastify.md)). The architecture (modules, flow, data model, dedup) stays the same; class names in the diagrams refer to the Java version and will be updated when the port is merged. The deployment target is now free-tier ([ADR-0010](decisions/0010-free-hosting.md)): Oracle VM + Caddy + DuckDNS, later k3s.
+
 The diagrams use [Mermaid](https://mermaid.js.org/), which GitHub renders automatically. Every element is marked **(built)** or **(planned)**.
 
 ## 1. Style: a modular monolith

@@ -29,7 +29,10 @@ So the system has to:
 - **Primary:** the owner, on an **iPhone**. Capture is the iOS Shortcut plus email plus statements. The app is the Expo web build installed to the home screen.
 - **Secondary (later):** a few invited friends, mostly on **Android**. Capture is a native SMS and notification reader in the APK. The app is the Android APK, installed directly (not through the Play Store).
 
-## Status (2026-11-16)
+## Status (2026-11-18)
+
+> **Direction change:** the backend is being ported from Java to **Node + TypeScript** ([ADR-0009](decisions/0009-node-typescript-fastify.md)) on the `node-port` branch, with free hosting ([ADR-0010](decisions/0010-free-hosting.md)). The owner now focuses on DevOps + AI/LLM: the AI writes the application code, the owner builds the infrastructure. The Java version lives on the `archive/java-v0` branch. Sections below describing Java classes are historical until the port is merged.
+
 
 | Area | State |
 |---|---|
