@@ -1,0 +1,5 @@
+# pnpm workspace: one repo, several packages that can depend on each other.
+# apps/mobile (Expo) and packages/shared (Zod schemas shared by api + app) arrive in Step 7.
+packages:
+  - "apps/*"
+  - "packages/*"

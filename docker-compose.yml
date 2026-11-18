@@ -1,15 +1,15 @@
-# Local development stack: Postgres 16 + the app.
+# Local development stack: Postgres 16 -> migrations (one-shot) -> API.
 # Values come from .env (copy .env.example to .env); Compose reads it automatically.
 
 services:
   postgres:
-    image: postgres:16-alpine          # same image as the Testcontainers tests
+    image: postgres:16-alpine # same image as the Testcontainers tests
     environment:
       POSTGRES_DB: ${DB_NAME:-finance}
       POSTGRES_USER: ${DB_USERNAME:-finance}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
     ports:
-      - "127.0.0.1:5432:5432"          # bind to localhost only, never 0.0.0.0
+      - "127.0.0.1:5432:5432" # bind to localhost only, never 0.0.0.0
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,25 +18,47 @@ services:
       timeout: 3s
       retries: 10
 
-  app:
-    build: .
+  # One-shot job: applies db/migrations, then EXITS. The same pattern becomes a Kubernetes Job
+  # (or an init container) in Step 9, and a pipeline step in CI.
+  migrate:
+    image: ghcr.io/amacneil/dbmate:2.38.1
+    command: ["--wait", "--no-dump-schema", "up"]
+    environment:
+      DATABASE_URL: postgres://${DB_USERNAME:-finance}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-finance}?sslmode=disable
+      DBMATE_MIGRATIONS_DIR: /db/migrations
+    volumes:
+      - ./db/migrations:/db/migrations:ro
+    # TODO(santosh): hands-on task #1 (see docs/plans/step-1-node-port.md).
+    #   Make `migrate` wait until Postgres is HEALTHY, not merely started.
+    #   Hint: the same `depends_on` + `condition` form the api service uses below.
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    # TODO(santosh): hands-on task #2.
+    #   Right now the API only waits for Postgres. It must ALSO wait until `migrate` has
+    #   finished SUCCESSFULLY (exit code 0); otherwise the API can serve requests against an
+    #   empty schema for a few seconds, and if a migration fails the API must not start at all.
+    #   Hint: depends_on condition `service_completed_successfully`.
+    #   Verify: `docker compose up` then `docker compose ps -a` shows migrate "Exited (0)" and
+    #   the API started after it (check timestamps in `docker compose logs`).
     depends_on:
       postgres:
-        condition: service_healthy     # "started" is not "ready to accept connections"
+        condition: service_healthy # "started" is not "ready to accept connections"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-finance}   # service name = DNS name
-      DB_USERNAME: ${DB_USERNAME:-finance}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: postgres://${DB_USERNAME:-finance}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-finance} # service name = DNS name
       INGEST_API_TOKEN: ${INGEST_API_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "127.0.0.1:8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/ready || exit 1"]
       interval: 10s
       timeout: 3s
-      start_period: 30s
+      start_period: 10s
       retries: 5
     restart: unless-stopped
 
 volumes:
-  pgdata:                              # survives `docker compose down`; deleted by `down -v`
+  pgdata: # survives `docker compose down`; deleted by `down -v`

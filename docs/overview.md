@@ -31,20 +31,20 @@ So the system has to:
 
 ## Status (2026-11-18)
 
-> **Direction change:** the backend is being ported from Java to **Node + TypeScript** ([ADR-0009](decisions/0009-node-typescript-fastify.md)) on the `node-port` branch, with free hosting ([ADR-0010](decisions/0010-free-hosting.md)). The owner now focuses on DevOps + AI/LLM: the AI writes the application code, the owner builds the infrastructure. The Java version lives on the `archive/java-v0` branch. Sections below describing Java classes are historical until the port is merged.
+> **Direction change:** the backend is being ported from Java to **Node + TypeScript** ([ADR-0009](decisions/0009-node-typescript-fastify.md)) on the `node-port` branch, with free hosting ([ADR-0010](decisions/0010-free-hosting.md)). The owner now focuses on DevOps + AI/LLM: the AI writes the application code, the owner builds the infrastructure. The Java version lives on the `archive/java-v0` branch. 
 
 
 | Area | State |
 |---|---|
-| Backend foundation (Phase 1) | ✅ Done |
-| SMS ingest pipeline: endpoint, parser framework, dedup, categorization (Phase 2) | ✅ Done, 69 tests passing |
+| Backend (Node port of Phases 1–2): ingest endpoint, parser framework, dedup, categorization | ✅ Built on `node-port`, 72 tests passing; awaiting review + merge |
+| Category seed data | ✅ Done (13 categories, 21 merchant rules) |
 | Bank-specific parsers: HDFC, SBI, OneCard | ⏳ Waiting for masked sample SMS |
-| Category seed data (`V2__seed_categories.sql`) | ⏳ Owner's hands-on task |
-| Multi-user + Google sign-in (Phase 2.5) | 📝 Planned, see [plan](plans/phase-2.5-multi-user.md) |
+| CI pipeline (Step 2) | Next: owner's hands-on step |
+| Multi-user + Google sign-in (Step 3) | 📝 Planned, see [plan](plans/phase-2.5-multi-user.md) |
 | Everything else | See the [roadmap](roadmap.md) |
 
 ## How this is being built
 
 - Code is written in a **Claude Code cloud session**: a temporary Linux container that runs the tests (including real Postgres via Testcontainers) and pushes to GitHub. **GitHub is the durable copy**; the container can be discarded at any time.
-- The owner reviews each phase, runs it locally, and writes selected pieces by hand (marked `TODO(santosh)` in the code) to build hands-on skill.
+- The owner reviews each step, runs it locally, and builds the **infrastructure** by hand (CI, deploys, Terraform, Kubernetes, observability), marked `TODO(santosh)` where relevant.
 - Work proceeds phase by phase. Each phase stops for review before the next one starts.

@@ -1,0 +1,32 @@
+{
+  "name": "@finance/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=../../.env src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "dbmate --migrations-dir ../../db/migrations --no-dump-schema up"
+  },
+  "dependencies": {
+    "fastify": "5.12.8",
+    "kysely": "0.29.9",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "12.2.1",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "dbmate": "2.38.1",
+    "typescript": "7.0.2",
+    "vitest": "5.1.1"
+  }
+}

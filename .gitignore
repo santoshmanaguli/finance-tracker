@@ -9,10 +9,13 @@ statements/
 *.csv
 *.xlsx
 samples/
-# Parser test fixtures live in src/test/resources/sms/ and must be MASKED.
+# Parser test fixtures live in apps/api/test/ and must be MASKED.
 
-# ---- Build output ----------------------------------------------------------
-target/
+# ---- Build output / dependencies -------------------------------------------
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 
 # ---- IDE / OS --------------------------------------------------------------
 .idea/

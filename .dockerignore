@@ -1,9 +1,11 @@
 # Keep the build context small and free of secrets.
-target/
+**/node_modules
+**/dist
+**/coverage
 .git/
 .idea/
 .vscode/
-*.iml
+docs/
 .env
 .env.*
 statements/

@@ -1,0 +1,28 @@
+{
+  // Type-checking config for src + tests (no output). tsconfig.build.json emits dist/.
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2024"],
+    "types": ["node"],
+
+    // Source files import each other with ".ts" extensions so Node can run them
+    // directly in development (native type stripping); tsc rewrites them to ".js" on build.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    // Only TypeScript syntax that can simply be erased (no enums, no namespaces,
+    // no constructor parameter properties). Required for Node's type stripping.
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

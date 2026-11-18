@@ -14,7 +14,7 @@ plan in docs/plans/ → owner approves → feature branch → code + tests → p
 | # | Step | Mainly | Owner learns | Status |
 |---|---|---|---|---|
 | 0 | **Reset:** archive Java (`archive/java-v0`), ADRs 0009/0010, new roadmap | AI | Decision records | ✅ Done |
-| 1 | **Port the backend to Node**: pnpm monorepo, Fastify API, same schema and test cases ([plan](plans/step-1-node-port.md)) | AI | Reviewing a port; monorepos | 📝 Plan awaiting approval |
+| 1 | **Port the backend to Node**: pnpm monorepo, Fastify API, same schema and test cases ([plan](plans/step-1-node-port.md)) | AI | Reviewing a port; monorepos | ✅ Built on `node-port` (72 tests); awaiting owner review + merge |
 | 2 | **CI from day one**: GitHub Actions lint → test (Postgres) → build image → Trivy scan → push to GHCR | **Owner** | CI pipelines, registries, supply-chain security | |
 | 3 | **Multi-user + Google sign-in** ([plan, to be rewritten for Node](plans/phase-2.5-multi-user.md)) | AI | OIDC, JWT, token rotation | |
 | 4 | **First real deploy**: Oracle VM + Docker Compose + Caddy + DuckDNS. The iPhone Shortcut goes live | **Owner** | Linux, firewalls, TLS, DNS | |
@@ -29,7 +29,8 @@ plan in docs/plans/ → owner approves → feature branch → code + tests → p
 
 ## Pending from the owner
 
-- [ ] **Approve the [Step 1 plan](plans/step-1-node-port.md).**
+- [ ] **Review the `node-port` branch, open the pull request, and merge it.**
+- [ ] **Hands-on tasks #1 and #2** in `docker-compose.yml` (startup ordering; see the TODOs).
 - [ ] **Masked sample SMS:** 3–5 each from HDFC, SBI and OneCard, with sender IDs (exact spacing and punctuation; digits masked as `XX1234`).
 - [ ] **Account details:** which HDFC and SBI products; OneCard's issuing bank.
 - [ ] Before Step 4: create an **Oracle Cloud** account (Always Free) and a **DuckDNS** subdomain.

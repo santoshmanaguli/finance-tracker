@@ -1,6 +1,6 @@
 # Architecture
 
-> **Note (2026-11-18):** the backend is moving from Java/Spring Boot to Node/TypeScript/Fastify ([ADR-0009](decisions/0009-node-typescript-fastify.md)). The architecture (modules, flow, data model, dedup) stays the same; class names in the diagrams refer to the Java version and will be updated when the port is merged. The deployment target is now free-tier ([ADR-0010](decisions/0010-free-hosting.md)): Oracle VM + Caddy + DuckDNS, later k3s.
+> **Implementation:** Node 24 + TypeScript + Fastify ([ADR-0009](decisions/0009-node-typescript-fastify.md)) since 2026-11-18; the Java version is on the `archive/java-v0` branch. Deployment target: free tier ([ADR-0010](decisions/0010-free-hosting.md)).
 
 The diagrams use [Mermaid](https://mermaid.js.org/), which GitHub renders automatically. Every element is marked **(built)** or **(planned)**.
 
@@ -25,7 +25,7 @@ flowchart LR
         AND["Android SMS + notification<br/>capture module (planned)"]
     end
 
-    BE["Finance Tracker backend<br/>Spring Boot (built)"]
+    BE["Finance Tracker API<br/>Node + Fastify (built)"]
     DB[("PostgreSQL 16<br/>(built)")]
     G["Google Sign-In<br/>(planned)"]
     GM["Gmail API<br/>(planned)"]
@@ -48,32 +48,32 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph web["HTTP edge"]
-        F["ApiTokenFilter<br/>(→ Spring Security in 2.5)"]
-        EH["GlobalExceptionHandler<br/>RFC 9457 problem details"]
+        F["ingestAuth hook<br/>(→ device tokens in Step 3)"]
+        EH["errors.ts<br/>RFC 9457 problem details"]
     end
 
     subgraph ingest["ingest module (built)"]
-        IC["SmsIngestController"]
-        IS["SmsIngestService<br/>one DB transaction per message"]
-        REG["SmsParserRegistry"]
+        IC["ingestRoutes"]
+        IS["ingestSms()<br/>one DB transaction per message"]
+        REG["parser registry"]
         P["Bank parsers<br/>HDFC / SBI / OneCard (pending samples)"]
-        RM["RawMessage + repository"]
-        CH["ContentHasher"]
+        RM["raw_messages"]
+        CH["contentHash()"]
     end
 
     subgraph txn["transaction module (built)"]
-        TR["TransactionRecorder<br/>dedup layers 2 + 3"]
-        T["Transaction + repository"]
+        TR["recordTransaction()<br/>dedup layers 2 + 3"]
+        T["transactions"]
     end
 
     subgraph acct["account module (built)"]
-        AS["AccountService.findOrCreate"]
+        AS["findOrCreateAccount()"]
     end
 
     subgraph cat["categorization module (built)"]
-        CS["CategorizationService"]
-        MN["MerchantNormalizer"]
-        MR["MerchantRule / Category"]
+        CS["categorize()"]
+        MN["normalizeMerchant()"]
+        MR["merchant_rules / categories"]
     end
 
     subgraph planned["planned modules"]
@@ -94,9 +94,9 @@ flowchart TB
     IS --> RM
 ```
 
-**Layering inside each module:** Controller (HTTP only) → Service (business rules, transaction boundary) → Repository (persistence only) → Domain (entities, value objects). Dependencies only point inward and downward.
+**Layering inside each module:** routes (HTTP only: auth, Zod validation, status codes) → service functions (business rules, transaction boundary) → repository functions (Kysely SQL) → plain types. Dependencies only point inward and downward. Dependencies are passed as function arguments (no DI container), which is what makes everything testable.
 
-**Module dependency direction:** `ingest → transaction → categorization`, and `ingest → account`. Lower modules never import upper ones. For example, `transaction` uses native SQL rather than importing `ingest.RawMessage`, which keeps the dependency graph acyclic.
+**Module dependency direction:** `ingest → transaction → categorization`, and `ingest → account`. Lower modules never import upper ones. The concurrent-duplicate race is resolved by the database (unique index) plus one automatic retry in `ingestSms()`, so both clients get a 200.
 
 ## 4. One SMS, end to end
 
@@ -104,18 +104,18 @@ flowchart TB
 sequenceDiagram
     autonumber
     participant S as iOS Shortcut
-    participant F as ApiTokenFilter
-    participant C as SmsIngestController
-    participant I as SmsIngestService
-    participant R as SmsParserRegistry
-    participant A as AccountService
-    participant T as TransactionRecorder
+    participant F as ingestAuth hook
+    participant C as ingestRoutes
+    participant I as ingestSms()
+    participant R as parser registry
+    participant A as findOrCreateAccount()
+    participant T as recordTransaction()
     participant D as PostgreSQL
 
     S->>F: POST /api/ingest/sms {sender, body, receivedAt} + X-Api-Token
     F->>F: constant-time token check (401 if wrong)
     F->>C: forward
-    C->>C: validate (400 if invalid)
+    C->>C: validate with Zod (400 if invalid)
     C->>I: ingest(command)
     Note over I,D: BEGIN transaction
     I->>D: content_hash already stored?
@@ -125,7 +125,7 @@ sequenceDiagram
         I->>R: parse(sender, body)
         R-->>I: Parsed / Ignored / Failed
         alt Parsed
-            I->>A: findOrCreate(bank, type, last4)
+            I->>A: INSERT ... ON CONFLICT DO NOTHING (race-safe)
             I->>T: record(observation)
             T->>D: same reference? (layer 2)
             T->>D: other-source match within ±15 min? (layer 3)
@@ -257,9 +257,9 @@ Kubernetes is deliberately **not** in this path. One small service doesn't need 
 | Concern | Approach |
 |---|---|
 | Configuration | 12-factor: everything from env vars; the same image runs everywhere |
-| Schema changes | Flyway, append-only versioned migrations; Hibernate only *validates* |
-| Time | Stored as UTC `TIMESTAMPTZ`; "this month" computed in `Asia/Kolkata`; `Clock` injected for testability |
-| Money | `BIGINT` paise; `BigDecimal` when parsing text |
+| Schema changes | dbmate, append-only timestamped plain-SQL migrations, run as a one-shot container (later a Kubernetes Job) |
+| Time | Stored as UTC `TIMESTAMPTZ`; "this month" computed in `Asia/Kolkata`; a `Clock` is injected for testability |
+| Money | `BIGINT` paise; string arithmetic when parsing text (never floats); BIGINT parsed to a safe-integer-checked `number` |
 | Errors | RFC 9457 problem details; 409 on constraint races |
-| Testing | Unit tests for pure logic; integration tests against real Postgres via Testcontainers; one shared Spring context |
-| Observability (8) | Structured JSON logs, Micrometer metrics, "no transaction in 3 days" alert |
+| Testing | Vitest `unit` project (pure logic, milliseconds) + `integration` project (real Postgres via Testcontainers, migrated with the production dbmate files) |
+| Observability | Structured JSON logs (pino) with secrets redacted and SMS bodies never logged (built); metrics + "no transaction in 3 days" alert (Step 10) |

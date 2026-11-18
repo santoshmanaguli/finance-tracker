@@ -1,6 +1,6 @@
 # Step 1 plan: port the backend to Node + TypeScript
 
-- **Status:** Proposed, awaiting owner approval
+- **Status:** ✅ Implemented on `node-port` (2026-11-18), awaiting owner review
 - **Branch:** `node-port` → pull request into `main`
 - **Decision:** [ADR-0009](../decisions/0009-node-typescript-fastify.md)
 
@@ -77,3 +77,23 @@ Write the **`docker-compose.yml` healthcheck and dependency ordering** for the n
 ## Not in this step
 
 CI (Step 2, the owner writes it), multi-user (Step 3), deployment (Step 4).
+
+## Outcome (2026-11-18)
+
+- **72 tests pass** (41 unit + 31 integration), versus 69 in Java. New: concurrent duplicate requests, readiness reporting DOWN when the DB is unreachable, and the seed data.
+- `docker compose` stack verified: Postgres → `migrate` (dbmate) → API healthy; auth, idempotency, problem details, log redaction and SIGTERM graceful shutdown were checked against the running container.
+- Image: production dependencies + `dist/` only, non-root `node` user.
+
+### Deviations from the plan (and why)
+
+| Plan | What happened | Why |
+|---|---|---|
+| `packages/shared` now | Deferred to Step 7 | Nothing shares it until the app exists; YAGNI |
+| Seed migration was the owner's TODO | Written by AI (categories + 21 merchant rules) | The owner now focuses on infrastructure, and real ingest needs `Uncategorized` |
+| Concurrent duplicates return 409 | **One automatic retry** → `ALREADY_RECEIVED` (200) | Two iOS automations ("UPI" + "debited") fire for the same SMS at the same instant; both should succeed |
+| `findOrCreate` = SELECT then INSERT | `INSERT ... ON CONFLICT DO NOTHING`, then SELECT | Race-safe; the database arbitrates |
+| Owner task: write the whole `migrate` ordering | Two TODOs in `docker-compose.yml` | Same intent; smaller and verifiable |
+| TypeScript 5.x assumed | **TypeScript 7** (native compiler) | Current stable; type-checks the whole project in about a second |
+
+### Sandbox notes (not project issues)
+The Claude Code cloud sandbox can't download packages *inside* `docker build` (its HTTPS proxy certificate isn't trusted in containers), so the image was verified with a scratch copy of the Dockerfile that injects that certificate. Docker Hub also rate-limits the sandbox, so base images were pulled from AWS's public mirror. Neither affects your laptop or GitHub Actions.
